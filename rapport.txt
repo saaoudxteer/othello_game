@@ -1,0 +1,117 @@
+L74/80 BoardGameView 
+
+   /**
+     * Remove any suggestion overlays currently shown on the board.
+     * Implementations should remove only suggestion/highlight shapes and
+     * keep piece shapes intact.
+     *
+     * (Ajouté pour permettre au contrôleur d'effacer uniquement les overlays de suggestion
+     * avant d'en redessiner, sans toucher aux pions. Permet un refresh propre des hints.)
+     */
+    void clearSuggestions();
+}
+
+L62/69 BoardGridView 
+
+    /** Remove all suggestion overlays from every square. */
+    public void clearSuggestions() {
+        for (int r = 0; r < rowCount; r++) {
+            for (int c = 0; c < columnCount; c++) {
+                squareViews[r][c].removeSuggestionShapes();
+            }
+        }
+        // (Ajouté pour centraliser la suppression des overlays de suggestion sur toute la grille,
+        // appelé par la vue ou le contrôleur.)
+    }
+@Override
+public void clearSuggestions() {
+    // Mock implementation - do nothing
+}  
+
+L21, L61 ShapeFactory : 
+
+            case TRIANGLE -> makeTriangle(squareSize);
+            case STAR -> makeStar(squareSize);
+            case SUGGESTION -> makeSuggestion(squareSize);
+
+                private static Circle makeSuggestion(double squareSize) {
+        // smaller than a normal piece
+        return new Circle((1. / 4) * squareSize);
+        // (Ajouté pour que les overlays de suggestion soient plus petits que les pions classiques.)
+    }
+
+SquareView addshape : 42/48 55/62 
+
+        // Special-case suggestion shapes: make them semi-transparent and mouse-transparent
+        if (shape == fr.univ_amu.m1info.board_game_library.graphics.Shape.SUGGESTION) {
+            shapeFX.setOpacity(0.5);
+            shapeFX.setMouseTransparent(true);
+            // mark so we can remove suggestion shapes without touching pieces
+            shapeFX.setId("suggestion");
+            // (Ajouté pour rendre les overlays visuellement différents, non interactifs,
+            // et facilement supprimables sans toucher aux pions.)
+        }
+
+
+    /**
+     * Remove only suggestion overlay shapes from this square, keeping piece shapes.
+     */
+    public void removeSuggestionShapes() {
+        shapes.getChildren().removeIf(n -> "suggestion".equals(n.getId()));
+        // (Ajouté pour supprimer uniquement les overlays de suggestion sur une case,
+        // sans effacer les pions.)
+    }
+
+L106 JavaFxBoardGameView 
+
+    @Override
+    public synchronized void clearSuggestions() {
+        boardGridView.clearSuggestions();
+        // (Ajouté pour exposer la suppression des suggestions au niveau de la vue globale,
+        // accessible par le contrôleur.)
+    }
+
+Dans l'enum Shape L26 : 
+
+    ,
+    /**
+     * A special shape used by the view to represent a suggestion/hint overlay.
+     */
+    SUGGESTION
+    // (Ajouté pour distinguer les overlays de suggestion des autres formes.)
+
+
+Dans BoardGameCOntroller : 
+L31 : 
+
+    /**
+     * Optional hook for controllers to start any UI-bound timers once the view
+     * is available and running on the JavaFX thread. Default implementation
+     * is a no-op so existing controllers are not required to implement it.
+     */
+    default void startUITimer() {
+        // no-op default implementation
+        // (Ajouté pour permettre à la vue JavaFX de lancer le timer UI au bon moment,
+        // sans provoquer d'erreur dans les tests unitaires.)
+    }
+ 
+L21 : JAvaFXBoaérdGameView 
+        // Notify the controller that the JavaFX view is ready so it may start
+        // any UI-bound timers. This happens on the JavaFX Application Thread
+        // because `start(...)` calls `setController` prior to calling
+        // `controller.initializeViewOnStart(view)` in the application bootstrap.
+        try {
+            controller.startUITimer();
+        } catch (Exception ignored) {
+            // Defensive: if controller doesn't support timers or an exception
+            // is thrown, keep running; timer start is optional.
+            // (Ajouté pour démarrer le timer UI uniquement quand la vue JavaFX est prête.)
+        } 
+ L58 à 62 : OthelleoControllerTEst : 
+
+
+        @Override
+        public void clearSuggestions() {
+            // Mock implementation - do nothing
+            // (Ajouté pour que le mock de test respecte la nouvelle interface BoardGameView.)
+        }

@@ -1,0 +1,6 @@
+plugins {
+    // La version 1.0.0 est requise pour Gradle 9+
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = "board_game_library"

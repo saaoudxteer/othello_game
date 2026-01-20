@@ -1,0 +1,91 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'jacoco'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+    id 'com.gradleup.shadow' version '9.2.2'
+}
+
+group 'fr.univ_amu.m1info.board_game_library'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+ext {
+    junitVersion = '5.11.3'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+application {
+    mainModule = 'fr.univ_amu.m1info.board_game_library'
+    mainClass = 'fr.univ_amu.m1info.othello.OthelloApplication'
+    applicationDefaultJvmArgs = ['--enable-native-access=javafx.graphics']
+}
+
+tasks.named('shadowJar') {
+    manifest {
+        // Force le Main-Class à utiliser le chemin de package complet et correct.
+        attributes 'Main-Class': 'fr.univ_amu.m1info.othello.OthelloApplication'
+    }
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'fr.univ_amu.m1info.board_game_library.OthelloApplication'
+        attributes 'Automatic-Module-Name': 'fr.univ_amu.m1info.board_game_library'
+    }
+}
+
+javafx {
+    version = '25'
+    modules = ['javafx.controls']
+}
+
+dependencies {
+    // Use the aggregated junit-jupiter artifact which brings api, engine and params.
+    testImplementation("org.junit.jupiter:junit-jupiter:${junitVersion}")
+    // keep launcher as runtime-only (should be available), but the above ensures engine is present
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.11.3")
+}
+
+tasks.compileJava {
+    options.forkOptions.jvmArgs = ["--enable-native-access=ALL-UNNAMED"]
+}
+
+test {
+    useJUnitPlatform()
+}
+
+jacoco {
+    toolVersion = "0.8.13"
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = false
+        csv.required = false
+        html.required = true
+    }
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                '**/module-info.class'
+            ])
+        }))
+    }
+}
+
+test.finalizedBy jacocoTestReport
+
